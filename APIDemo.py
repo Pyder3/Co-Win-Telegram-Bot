@@ -3,13 +3,14 @@ import requests
 # import telegram_send
 import telebot
 import datetime
+import os
 
 # parameters = {'pincode': '834002', 'date': '06-08-2021'}
 # response = requests.get("https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin", params=parameters)
 # print(json.loads(json.dumps(response.json(), sort_keys=True, indent=4))['sessions'])
 
 
-API_KEY = '1907675657:AAF88lFvp-bZcwz0QUKFH3ABdZYSM0SqSI0'
+API_KEY = os.getenv('API_KEY')
 bot = telebot.TeleBot(API_KEY)
 
 
