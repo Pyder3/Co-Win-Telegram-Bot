@@ -16,7 +16,7 @@ no_of_days = 0
 chat_id = ""
 vaccine_type = ""
 dose_type = ""
-API_KEY = '1907675657:AAF88lFvp-bZcwz0QUKFH3ABdZYSM0SqSI0'
+API_KEY = os.getenv("API_KEY")
 bot = telebot.TeleBot(API_KEY)
 
 
