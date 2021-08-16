@@ -6,6 +6,7 @@ import time
 import requests
 import datetime
 import json
+import os
 
 # parameters = {'pincode': '834002', 'date': '06-08-2021'}
 # response = requests.get("https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin", params=parameters)
@@ -54,7 +55,7 @@ vaccine_name = ""
 
 def brand_name(message):
     user_input = str(message.text)
-    if user_input.casefold() == "covishield" or user_input.casefold() == "covaxin" or user_input.casefold() == "sputnik v" or user_input == "all":
+    if user_input.casefold() == "covishield" or user_input.casefold() == "covaxin" or user_input.casefold() == "sputnik v" or user_input.casefold() == "all":
         return True
     else:
         return False
@@ -71,7 +72,12 @@ def dose(message):
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, f"Hey, {str(message.from_user.first_name)}, Welcome to VAN BOT!! Plss send the command /find_by_pin to begin!!")
-    print(message)
+
+
+@bot.message_handler(commands=['help'])
+def help(message):
+    bot.send_message(message.chat.id, "If you want to edit your preferences use the command /edit_details.\nIf you notice a bug, DM the admin at @vanbot_admin")
+
 
 
 @bot.message_handler(commands=['find_by_pin', 'edit_details'])
@@ -89,7 +95,8 @@ def pin_param(message):
     pin_code = str(message.text)
     file[str(chat_id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
-    bot.send_message(message.chat.id, "How far ahead do you want to search for??")
+    file = shelve.open("cust_data", flag='c')
+    bot.send_message(message.chat.id, "How many days do you want to search for??")
 
 
 @bot.message_handler(func=days_input)
@@ -101,6 +108,7 @@ def date_param(message):
     chat_id = message.chat.id
     file[str(chat_id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
+    file = shelve.open("cust_data", flag='c')
     bot.send_message(message.chat.id, "Enter the desired vaccine name (Covishield, Covaxin, Sputnik) and for no choice enter 'all'")
 
 
@@ -111,6 +119,7 @@ def vaccine_name(message):
     vaccine_type = str(message.text).casefold()
     file[str(message.chat.id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
+    file = shelve.open("cust_data", flag='c')
     bot.send_message(message.chat.id, "If you wanna search for first dose, enter 'first', for second dose enter 'second' and for no filter enter 'both'")
 
 
@@ -121,6 +130,8 @@ def fORs(message):
     file = shelve.open("cust_data", flag='c')
     file[str(message.chat.id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
+    file = shelve.open("cust_data", flag='c')
+    bot.send_message(message.chat.id, "Data recieved successfully!!")
 
 
 
@@ -143,7 +154,7 @@ def send_reply():
             no_of_days = file[p][1]
             vaccine_type = file[p][3]
             dose = file[p][4]
-            print(file[p])
+            # print(file[p])
             for l in range(no_of_days):
                 today_date = f"{str(int(datetime.datetime.now().strftime('%d')) + l)}-{datetime.datetime.now().strftime('%m')}-{datetime.datetime.now().strftime('%Y')}"
                 parameters = {'pincode': str(pin_code), 'date': today_date}
@@ -162,13 +173,15 @@ def send_reply():
                     # bot.send_message(chat_id, f"No vaccine centres available for booking on {today_date}")
                     reply.append(f"No vaccine centres available for booking on {today_date}")
             if str(file[p][2]) != str(reply):
-                file[p] = [pin_code, no_of_days, reply, vaccine_type]
+                file[p] = [pin_code, no_of_days, reply, vaccine_type, dose]
                 file.close()
+                file = shelve.open("cust_data", flag='c')
                 if len(str(p)) != 0:
                     bot.send_message(int(p), "SLOTS UPDATED!!!!")
                     for k in reply:
                         # bot.send_message(int(p), f"Following is the list of centres avaiable on {} in pin code {pin_code}")
                         bot.send_message(int(p), k)
+                    bot.send_message(int(p), "To book a slot, log on to https://selfregistration.cowin.gov.in")
 
 
 schedule.every(15).seconds.do(send_reply)
