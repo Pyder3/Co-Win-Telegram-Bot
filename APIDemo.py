@@ -12,14 +12,13 @@ import os
 # response = requests.get("https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin", params=parameters)
 # print(json.loads(json.dumps(response.json(), sort_keys=True, indent=4))['sessions'])
 
-
 no_of_days = 0
+pin_code = 0
 chat_id = ""
 vaccine_type = ""
 dose_type = ""
-API_KEY = os.getenv("API_KEY")
+API_KEY = "1907675657:AAF88lFvp-bZcwz0QUKFH3ABdZYSM0SqSI0"
 bot = telebot.TeleBot(API_KEY)
-
 
 def dummy_func(message):
     dummy_message = message.text
@@ -85,15 +84,12 @@ def find_by_pin(message):
     bot.reply_to(message, "Please enter your pin code")
 
 
-pin_code = 0
-
-
 @bot.message_handler(func=check_pin)
 def pin_param(message):
     global pin_code
     file = shelve.open("cust_data", flag='c')
     pin_code = str(message.text)
-    file[str(chat_id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
+    file[str(message.chat.id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
     file = shelve.open("cust_data", flag='c')
     bot.send_message(message.chat.id, "How many days do you want to search for??")
@@ -106,7 +102,7 @@ def date_param(message):
     file = shelve.open("cust_data", flag='c')
     no_of_days = int(message.text)
     chat_id = message.chat.id
-    file[str(chat_id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
+    file[str(message.chat.id)] = [pin_code, no_of_days, [], vaccine_type, dose_type]
     file.close()
     file = shelve.open("cust_data", flag='c')
     bot.send_message(message.chat.id, "Enter the desired vaccine name (Covishield, Covaxin, Sputnik) and for no choice enter 'all'")
@@ -133,6 +129,21 @@ def fORs(message):
     file = shelve.open("cust_data", flag='c')
     bot.send_message(message.chat.id, "Data recieved successfully!!")
 
+
+@bot.message_handler(commands=["get_my_details"])
+def fetch(message):
+    file = shelve.open("cust_data", flag='r')
+    bot.send_message(message.chat.id, f"Your pin code is {file[str(message.chat.id)][0]}\nYour are recieving notifications for {file[str(message.chat.id)][1]} days\nYour vaccine of choice is {file[str(message.chat.id)][3]}\nYou are searching for {file[str(message.chat.id)][4]} dose")
+    file.close()
+
+
+@bot.message_handler(commands=['end'])
+def stop(message):
+    file = shelve.open("cust_data", flag='r')
+    del file[str(message.chat.id)]
+    file.close()
+    file = shelve.open("cust_data", flag='r')
+    bot.send_message(message.chat.id, "You will no longer receive notifications!!")
 
 
 # @bot.message_handler(func=dummy_func)
@@ -178,9 +189,11 @@ def send_reply():
                 file = shelve.open("cust_data", flag='c')
                 if len(str(p)) != 0:
                     bot.send_message(int(p), "SLOTS UPDATED!!!!")
-                    for k in reply:
+                    for k in file[p][2]:
                         # bot.send_message(int(p), f"Following is the list of centres avaiable on {} in pin code {pin_code}")
                         bot.send_message(int(p), k)
+                        print(k)
+                        print(pin_code)
                     bot.send_message(int(p), "To book a slot, log on to https://selfregistration.cowin.gov.in")
 
 
@@ -198,7 +211,11 @@ t1.start()
 
 
 def polling_thread():
-    bot.polling()
+    while True:
+        try:
+            bot.polling(none_stop=False)
+        except Exception:
+            time.sleep(15)
 
 
 t2 = threading.Thread(target=polling_thread)
